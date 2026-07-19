@@ -3,10 +3,11 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QFileDialog, QWidget
+from PySide6.QtWidgets import QFileDialog, QFormLayout, QLabel, QWidget
 
 from modules.BaseWidget import BaseWidget
 from modules.DragDropLineEdit import DragDropLineEdit
+from modules.ScrollOnSelect import ComboBox
 from ui_files.sub_dataset_extra_input import Ui_sub_dataset_extra_input
 from ui_files.sub_dataset_input import Ui_sub_dataset_input
 
@@ -61,6 +62,25 @@ class SubsetWidget(BaseWidget):
         self.extra_widget.protected_tags_input.allow_empty = True
         self.extra_widget.protected_tags_selector.setIcon(
             QIcon(str(Path("icons/more-horizontal.svg")))
+        )
+
+        self.widget.hybrid_caption_label = QLabel(self.content)
+        self.widget.hybrid_caption_label.setObjectName("hybrid_caption_label")
+        self.widget.hybrid_caption_label.setText("Hybrid Caption Extension")
+        self.widget.hybrid_caption_label.setToolTip(
+            "Optional: read a second caption sidecar for the same image and append it unchanged after tag shuffle/dropout. Use .caption when Caption Extension is .txt."
+        )
+        self.widget.hybrid_caption_extension_selector = ComboBox(self.content)
+        self.widget.hybrid_caption_extension_selector.setObjectName("hybrid_caption_extension_selector")
+        self.widget.hybrid_caption_extension_selector.addItems(["", ".caption", ".txt"])
+        self.widget.hybrid_caption_extension_selector.setToolTip(
+            "Optional: read a second caption sidecar for the same image and append it unchanged after tag shuffle/dropout. Use .caption when Caption Extension is .txt."
+        )
+        self.widget.other_form_layout.setWidget(
+            4, QFormLayout.ItemRole.LabelRole, self.widget.hybrid_caption_label
+        )
+        self.widget.other_form_layout.setWidget(
+            4, QFormLayout.ItemRole.FieldRole, self.widget.hybrid_caption_extension_selector
         )
 
         self.extra_widget.face_crop_group.setChecked(False)
@@ -118,6 +138,9 @@ class SubsetWidget(BaseWidget):
 
         self.widget.caption_extension_selector.currentTextChanged.connect(
             lambda x: self.edit_dataset_args("caption_extension", x)
+        )
+        self.widget.hybrid_caption_extension_selector.currentTextChanged.connect(
+            lambda x: self.edit_dataset_args("hybrid_caption_extension", x, True)
         )
         self.widget.regularization_images_enable.clicked.connect(
             lambda x: self.edit_dataset_args("is_reg", x, True)
@@ -387,6 +410,9 @@ class SubsetWidget(BaseWidget):
         self.widget.caption_extension_selector.setCurrentText(
             dataset_args.get("caption_extension", ".txt")
         )
+        self.widget.hybrid_caption_extension_selector.setCurrentText(
+            dataset_args.get("hybrid_caption_extension", "")
+        )
         self.widget.regularization_images_enable.setChecked(
             dataset_args.get("is_reg", False)
         )
@@ -487,6 +513,11 @@ class SubsetWidget(BaseWidget):
         )
         self.edit_dataset_args(
             "caption_extension", self.widget.caption_extension_selector.currentText()
+        )
+        self.edit_dataset_args(
+            "hybrid_caption_extension",
+            self.widget.hybrid_caption_extension_selector.currentText(),
+            True,
         )
         self.edit_dataset_args(
             "random_crop_padding_percent", self.widget.random_crop_padding_percent_input.value(), False
